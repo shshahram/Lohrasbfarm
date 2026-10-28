@@ -1,0 +1,36 @@
+# Base44 development stack for the farm_app Flutter web client.
+# Runs the app from the cloned source (bind mount) with a rebuild-on-change
+# watcher, so edits in farm_app/lib appear without an image rebuild.
+#
+# The app is a Flutter web frontend only and calls a remote PHP API
+# (https://nikravaan.ir/api/*.php) that is hardcoded in lib/. There is no local
+# backend in this repository and no external credentials are required to boot.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app/farm_app
+    command: ["sh", "/opt/base44/web_dev.sh"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./farm_app:/app/farm_app
+      - ./tools/base44:/opt/base44:ro
+      - flutter_pub_cache:/root/.pub-cache
+    environment:
+      - BASE44_PREVIEW_MODE
+    labels:
+      base44.project: "farm_app"
+      base44.kind: "web"
+      base44.port: "3000"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/ -o /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 240s
+
+volumes:
+  flutter_pub_cache:

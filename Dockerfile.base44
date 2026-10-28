@@ -1,0 +1,28 @@
+# Base44 dev runtime for the Flutter web client.
+# The Flutter SDK is baked in (it is tooling, not app code); the app source is
+# bind-mounted from ./farm_app at run time so edits are picked up live.
+# No newer Flutter image exists on the public registries, and pubspec.yaml
+# requires Dart ^3.12.2, so the matching stable SDK (3.47.8) is downloaded here.
+FROM debian:bookworm-slim
+
+ARG FLUTTER_VERSION=3.47.8
+ENV FLUTTER_ROOT=/opt/flutter
+ENV PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
+ENV PUB_CACHE=/root/.pub-cache
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl git unzip xz-utils python3 \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/flutter.tar.xz \
+      "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+ && tar xf /tmp/flutter.tar.xz -C /opt \
+ && rm -f /tmp/flutter.tar.xz \
+ && git config --global --add safe.directory /opt/flutter \
+ && flutter config --no-analytics \
+ && flutter precache --web \
+ && flutter --version
+
+WORKDIR /app/farm_app
+EXPOSE 3000
